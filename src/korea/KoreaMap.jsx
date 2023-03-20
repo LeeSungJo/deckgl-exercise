@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+// import { createRoot } from "react-dom/client";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer, ArcLayer } from "@deck.gl/layers";
 import maplibregl from "maplibre-gl";
@@ -7,10 +8,35 @@ import { scaleQuantile } from "d3-scale";
 
 // import testMap from "./test.geojson";
 import KOREA_WSG84 from "./korea_wsg84.geojson";
+import ARCDATA from "./ArcData.json";
 
 // Source data GeoJSON
-const DATA_URL =
-  "https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/arc/counties.json"; // eslint-disable-line
+// const DATA_URL =
+//   "https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/arc/counties.json"; // eslint-disable-line
+
+// const DATA = [
+//   {
+//     properties: {
+//       name: "포항",
+//       centroid: [129.269029, 36.80787],
+//     },
+//   },
+// ];
+
+// const DATA = [
+//   {
+//     inbound: 72633,
+//     outbound: 74735,
+//     from: {
+//       name: "19th St. Oakland (19TH)",
+//       coordinates: [129.269029, 36.80787],
+//     },
+//     to: {
+//       name: "12th St. Oakland City Center (12TH)",
+//       coordinates: [127.271604, 37.803664],
+//     },
+//   },
+// ];
 
 const inFlowColors = [
   [255, 255, 204],
@@ -32,39 +58,6 @@ const outFlowColors = [
   [177, 0, 38],
 ];
 
-function calculateArcs(selectedCounty) {
-  let data = fetch(DATA_URL).then((response) => response.json());
-
-  if (!data || !data.length) {
-    return null;
-  }
-  if (!selectedCounty) {
-    console.log(data);
-    selectedCounty = data.find((f) => f.properties.name === "Los Angeles, CA");
-  }
-  const { flows, centroid } = selectedCounty.properties;
-
-  const arcs = Object.keys(flows).map((toId) => {
-    const f = data[toId];
-    return {
-      source: centroid,
-      target: f.properties.centroid,
-      value: flows[toId],
-    };
-  });
-
-  const scale = scaleQuantile()
-    .domain(arcs.map((a) => Math.abs(a.value)))
-    .range(inFlowColors.map((c, i) => i));
-
-  arcs.forEach((a) => {
-    a.gain = Math.sign(a.value);
-    a.quantile = scale(Math.abs(a.value));
-  });
-
-  return arcs;
-}
-
 // Viewport settings, 서울시청으로 세팅
 const INITIAL_VIEW_STATE = {
   longitude: 126.9779451,
@@ -81,9 +74,81 @@ function getTooltip({ object }) {
 }
 
 export default function KoreaMap() {
+  // let data = fetch(DATA_URL).then((response) => response.json());
+
   const [selectedCounty, selectCounty] = useState(null);
 
-  const arcs = useMemo(() => calculateArcs(selectedCounty), [selectedCounty]);
+  function calculateArcs(data, selectedCounty) {
+    if (!data || !data.length) {
+      return null;
+    }
+    if (!selectedCounty) {
+      console.log(data);
+      selectedCounty = data.find(
+        (f) => f.properties.name === "Los Angeles, CA"
+      );
+    }
+
+    const { flows, centroid } = selectedCounty.properties;
+
+    const arcs = Object.keys(flows).map((toId) => {
+      const f = data[toId];
+      return {
+        source: centroid,
+        target: f.properties.centroid,
+        value: flows[toId],
+      };
+    });
+
+    const scale = scaleQuantile()
+      .domain(arcs.map((a) => Math.abs(a.value)))
+      .range(inFlowColors.map((c, i) => i));
+
+    arcs.forEach((a) => {
+      a.gain = Math.sign(a.value);
+      a.quantile = scale(Math.abs(a.value));
+    });
+
+    return arcs;
+  }
+  // function calculateArcs(data, selectedCounty) {
+  //   if (!data || !data.length) {
+  //     return null;
+  //   }
+  //   if (!selectedCounty) {
+  //     console.log(data);
+  //     selectedCounty = data.find(
+  //       (f) => f.properties.name === "Los Angeles, CA"
+  //     );
+  //   }
+
+  //   const { flows, centroid } = selectedCounty.properties;
+
+  //   const arcs = Object.keys(flows).map((toId) => {
+  //     const f = data[toId];
+  //     return {
+  //       source: centroid,
+  //       target: f.properties.centroid,
+  //       value: flows[toId],
+  //     };
+  //   });
+
+  //   const scale = scaleQuantile()
+  //     .domain(arcs.map((a) => Math.abs(a.value)))
+  //     .range(inFlowColors.map((c, i) => i));
+
+  //   arcs.forEach((a) => {
+  //     a.gain = Math.sign(a.value);
+  //     a.quantile = scale(Math.abs(a.value));
+  //   });
+
+  //   return arcs;
+  // }
+
+  const arcs = useMemo(
+    () => calculateArcs(ARCDATA, selectedCounty),
+    [selectedCounty]
+  );
 
   // const onClick = (info) => {
   //   if (info.object) {
@@ -131,6 +196,11 @@ export default function KoreaMap() {
 
   const layers = [koreaWsg84, arcsLayer];
 
+  // let data = null
+  // useEffect(() => {
+  //   data = fetch(DATA_URL).then((response) => response.json());
+  // }, [data]);
+
   return (
     <DeckGL
       initialViewState={INITIAL_VIEW_STATE}
@@ -147,3 +217,14 @@ export default function KoreaMap() {
     </DeckGL>
   );
 }
+
+// export function renderToDOM(container) {
+//   const root = createRoot(container);
+//   root.render(<KoreaMap />);
+
+//   fetch(DATA_URL)
+//     .then((response) => response.json())
+//     .then(({ features }) => {
+//       root.render(<KoreaMap data={features} />);
+//     });
+// }
