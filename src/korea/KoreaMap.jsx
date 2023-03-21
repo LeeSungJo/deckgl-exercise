@@ -6,8 +6,8 @@ import maplibregl from "maplibre-gl";
 import { Map } from "react-map-gl";
 import { scaleQuantile } from "d3-scale";
 
-// import testMap from "./test.geojson";
-import KOREA_WSG84 from "./korea_wsg84.geojson";
+// import KOREA_WSG84 from "./korea_wsg84.geojson";
+import KOREA_WSG84 from "./korea_wsg84_low.json";
 import ArcData from "./ArcData.json";
 
 const inFlowColors = [
