@@ -11,9 +11,6 @@ import ArcData from "./ArcData.json";
 // const DATA_URL =
 //   "https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/arc/counties.json"; // eslint-disable-line
 
-// const ARC_DATA = ArcData.features;
-// console.log(ArcData.features);
-
 export const inFlowColors = [
   [255, 255, 204],
   [199, 233, 180],
