@@ -6,9 +6,10 @@ import maplibregl from "maplibre-gl";
 import { Map } from "react-map-gl";
 import { scaleQuantile } from "d3-scale";
 
-// import KOREA_WSG84 from "./korea_wsg84.geojson";
-import KOREA_WSG84 from "./korea_wsg84_low.json";
-import ArcData from "./ArcData.json";
+// import KOREA_WSG84 from "./maps/korea_wsg84.geojson";
+import KOREA_WSG84 from "./maps/korea_wsg84_low.json";
+// import ArcData from "./maps/ArcData.json";
+import CENTROID_GEO from "./maps/centroid_geo.json";
 
 const inFlowColors = [
   [255, 255, 204],
@@ -44,14 +45,14 @@ function calculateArcs(data, selectedCounty) {
     return null;
   }
   if (!selectedCounty) {
-    console.log(data);
-    selectedCounty = data.find((f) => f.properties.name === "Los Angeles, CA");
+    selectedCounty = data.find((f) => f.properties.CTP_KOR_NM === "서울특별시");
   }
 
   const { flows, centroid } = selectedCounty.properties;
 
   const arcs = Object.keys(flows).map((toId) => {
     const f = data[toId];
+    console.log(f);
     return {
       source: centroid,
       target: f.properties.centroid,
@@ -71,19 +72,53 @@ function calculateArcs(data, selectedCounty) {
   return arcs;
 }
 
+// function calculateArcs(data, selectedCounty) {
+//   if (!data || !data.length) {
+//     return null;
+//   }
+//   if (!selectedCounty) {
+//     console.log(data);
+//     selectedCounty = data.find((f) => f.properties.name === "Los Angeles, CA");
+//   }
+
+//   const { flows, centroid } = selectedCounty.properties;
+
+//   const arcs = Object.keys(flows).map((toId) => {
+//     const f = data[toId];
+//     return {
+//       source: centroid,
+//       target: f.properties.centroid,
+//       value: flows[toId],
+//     };
+//   });
+
+//   const scale = scaleQuantile()
+//     .domain(arcs.map((a) => Math.abs(a.value)))
+//     .range(inFlowColors.map((c, i) => i));
+
+//   arcs.forEach((a) => {
+//     a.gain = Math.sign(a.value);
+//     a.quantile = scale(Math.abs(a.value));
+//   });
+
+//   return arcs;
+// }
+
 // hover시 이름 표시됨
 function getTooltip({ object }) {
   return object && object.properties.CTP_KOR_NM;
 }
 
 export default function KoreaMap() {
-  const data = ArcData.features;
+  // const data = ArcData.features;
+  const data = CENTROID_GEO.features;
 
   const [selectedCounty, selectCounty] = useState(null);
 
   const arcs = useMemo(
     () => calculateArcs(data, selectedCounty),
     [data, selectedCounty]
+    // console.log(data)
   );
 
   // 세계지도 Base Map
@@ -105,7 +140,9 @@ export default function KoreaMap() {
     // Interactive props
     pickable: true,
     autoHighlight: true,
-    onClick: ({ object }) => selectCounty(object),
+    onClick: ({ object }) => {
+      selectCounty(object);
+    },
   });
 
   const arcsLayer = new ArcLayer({
